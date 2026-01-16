@@ -26,10 +26,7 @@ This service receives asynchronous jobs from external sources (HTTP, queue, agen
 
 ### Expected output
 
-Define an **abstraction**.
-Name it yourself.
-
-But **clearly answer** these questions in writing:
+Define an **abstraction**. Name it yourself. But **clearly answer** these questions in writing:
 
 1. Where do I count **concurrency**?
 2. Where does the pending Promise **reside**?
