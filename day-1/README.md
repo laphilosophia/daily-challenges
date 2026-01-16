@@ -1,30 +1,30 @@
 # Day 1: AsyncGate — Async Concurrency Limiter From Scratch
 
-> **TL;DR:** 137 satır TypeScript ile production-grade bir async semaphore yazdık. Hiçbir dış kütüphane yok.
+> **TL;DR:** A production-grade async semaphore in 137 lines of TypeScript. Zero external dependencies.
 
 ---
 
-## 🎯 Problem
+## 🎯 The Problem
 
-Node.js'te uzun süre yaşayan bir servis düşün. Bu servis dışarıdan async iş alıyor — HTTP, queue, agent loop, webhook.
+Imagine a long-running Node.js service. It receives async work from various sources — HTTP requests, message queues, agent loops, webhooks.
 
-**Aynı anda çalışan async iş sayısını sınırlamak istiyorsun ama:**
+**You want to limit concurrent async operations, but:**
 
-- ✅ İşler FIFO olsun
-- ✅ Bekleyen iş iptal edilebilsin
-- ✅ Timeout olsun
-- ✅ `await` ergonomisi bozulmasın
-- ✅ Event loop block edilmesin
-- ✅ Promise leak oluşmasın
+- ✅ Jobs must be processed in FIFO order
+- ✅ Pending jobs must be cancellable
+- ✅ Timeout support is required
+- ✅ `await` ergonomics must be preserved
+- ✅ Event loop must not be blocked
+- ✅ No Promise leaks
 
-**Kısıtlar:**
-- `p-limit`, `bull`, `bottleneck` vb. **yok**
-- `setInterval` / polling **yok**
-- Global mutable state **yok**
+**Constraints:**
+- No `p-limit`, `bull`, `bottleneck`, etc.
+- No `setInterval` / polling
+- No global mutable state
 
 ---
 
-## 💡 Çözüm: AsyncGate
+## 💡 The Solution: AsyncGate
 
 ```typescript
 import { AsyncGate } from './async-gate';
@@ -47,11 +47,11 @@ await gate.run(async () => {
 
 ---
 
-## 🏗️ Mimari Kararlar
+## 🏗️ Architectural Decisions
 
 ### 1. Intrusive Linked-List
 
-Queue için array değil, doubly-linked list kullandık. Neden?
+We used a doubly-linked list instead of an array for the queue. Why?
 
 ```
 ┌──────┐    ┌──────┐    ┌──────┐
@@ -62,13 +62,13 @@ Queue için array değil, doubly-linked list kullandık. Neden?
   head                     tail
 ```
 
-- **O(1) cancellation** — Node'u ortadan çıkar, sağı sola bağla
-- **O(1) enqueue/dequeue** — Head ve tail pointer'ları
-- **Polling yok** — Push-based architecture
+- **O(1) cancellation** — Unlink the node, connect left to right
+- **O(1) enqueue/dequeue** — Head and tail pointers
+- **No polling** — Push-based architecture
 
 ### 2. Deferred Pattern
 
-Promise'ın kendisini kuyrukta tutmak yerine, `resolve/reject` callback'lerini tutuyoruz:
+Instead of storing the Promise itself in the queue, we store the `resolve/reject` callbacks:
 
 ```typescript
 interface WaitNode {
@@ -76,18 +76,18 @@ interface WaitNode {
   reject: (error: Error) => void;
   prev: WaitNode | null;
   next: WaitNode | null;
-  settled: boolean;  // Race condition koruması
+  settled: boolean;  // Race condition guard
 }
 ```
 
-Bu sayede:
-- Promise caller'da kalır (memory leak yok)
-- Cancellation sadece `unlink()` çağırmak
-- Timeout sadece `reject()` çağırmak
+Benefits:
+- Promise stays with the caller (no memory leaks)
+- Cancellation is just calling `unlink()`
+- Timeout is just calling `reject()`
 
 ### 3. Single-Shot Guard
 
-Edge case: `dispatch()` ile `onAbort` aynı tick'te çalışırsa ne olur?
+Edge case: What if `dispatch()` and `onAbort` fire in the same tick?
 
 ```typescript
 const onAbort = () => {
@@ -98,39 +98,39 @@ const onAbort = () => {
 };
 ```
 
-Bu 3 satır, resolve/reject race condition'ı önlüyor.
+These 3 lines prevent the resolve/reject race condition.
 
 ---
 
-## 🔍 5 Kritik Soru (ve Cevapları)
+## 🔍 5 Critical Questions (and Answers)
 
-### 1. "Concurrency"yi nerede sayıyorum?
+### 1. Where do I track concurrency?
 
-`this.running` counter'ında. `acquire()` slot verdiğinde artırılır, `release()` çağrıldığında azaltılır.
+In the `this.running` counter. Incremented when `acquire()` grants a slot, decremented when `release()` is called.
 
-### 2. Bekleyen Promise nerede duruyor?
+### 2. Where do pending Promises live?
 
-Intrusive doubly-linked list'te. Her node `resolve/reject` callback'ini tutar — Promise'ın kendisini değil.
+In the intrusive doubly-linked list. Each node holds the `resolve/reject` callbacks — not the Promise itself.
 
-### 3. Timeout olduğunda invariants nasıl korunuyor?
+### 3. How are invariants preserved on timeout?
 
-- Node listeden `unlink()` ile çıkarılır
-- Promise `TimeoutError` ile reject edilir
-- `running` counter **artırılmaz** — slot hiç verilmedi
+- Node is removed from the list via `unlink()`
+- Promise is rejected with `TimeoutError`
+- `running` counter is **never incremented** — slot was never granted
 
-### 4. Task reject ederse queue state nasıl garanti?
+### 4. How is queue state guaranteed if a task rejects?
 
-`run()` helper'ı `finally` bloğunda `release()` çağırır. Manuel `acquire()` kullanımında caller sorumludur.
+The `run()` helper calls `release()` in a `finally` block. For manual `acquire()` usage, the caller is responsible.
 
-### 5. Hangi senaryoda bilinçli olarak çöker?
+### 5. When does this intentionally crash?
 
-- `concurrency ≤ 0` → Constructor hata fırlatır
-- `release()` iki kez çağrılırsa → Error (bug detection)
+- `concurrency ≤ 0` → Constructor throws
+- `release()` called twice → Error (bug detection)
 - AbortSignal already aborted → Immediate reject
 
 ---
 
-## ✅ Test Sonuçları
+## ✅ Test Results
 
 ```
 🧪 AsyncGate Test Suite
@@ -148,27 +148,27 @@ Intrusive doubly-linked list'te. Her node `resolve/reject` callback'ini tutar �
 
 ---
 
-## 📊 Sonuç
+## 📊 Summary
 
-| Metrik | Değer |
+| Metric | Value |
 |--------|-------|
-| Satır sayısı | 137 (limit: 150) |
-| Dış bağımlılık | 0 |
+| Lines of code | 137 (limit: 150) |
+| External dependencies | 0 |
 | Test coverage | 7/7 |
-| Time complexity | O(1) tüm operasyonlar |
+| Time complexity | O(1) all operations |
 
-**Lesson learned:** %90 developer bu problemi "kolay" sanır. %90 çözümde memory leak veya race condition vardır. Doğru çözüm küçük ama keskindir.
+**Lesson learned:** 90% of developers think this problem is "easy." 90% of solutions have memory leaks or race conditions. The correct solution is small but sharp.
 
 ---
 
-## 🔗 Dosyalar
+## 🔗 Files
 
-| Dosya | Açıklama |
-|-------|----------|
+| File | Description |
+|------|-------------|
 | [`async-gate.ts`](./async-gate.ts) | Core implementation |
 | [`async-gate.test.ts`](./async-gate.test.ts) | Test suite |
 | [`challenge.md`](./challenge.md) | Original problem statement |
 
 ```bash
-npm test  # Çalıştır
+npm test  # Run tests
 ```

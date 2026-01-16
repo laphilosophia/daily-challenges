@@ -1,6 +1,6 @@
 # 🎯 Daily Coding Challenges
 
-Günlük coding challenge'lar — her gün bir problem, bir çözüm, bir blog yazısı.
+Daily coding challenges — one problem, one solution, one blog post.
 
 ## Structure
 
@@ -14,10 +14,10 @@ challenge/
 
 ## Philosophy
 
-- **Gerçek problemler** — Teorik değil, production'da karşılaşılan sorunlar
-- **Kısıtlı çözümler** — Dış kütüphane yok, temel prensiplerden inşa
-- **150 satır limiti** — Keskin, minimal, test edilebilir kod
-- **5 kritik soru** — Her challenge tasarım kararlarını sorgular
+- **Real problems** — Production issues, not theoretical exercises
+- **Constrained solutions** — No external libraries, build from first principles
+- **150-line limit** — Sharp, minimal, testable code
+- **5 critical questions** — Every challenge interrogates design decisions
 
 ## Challenges
 

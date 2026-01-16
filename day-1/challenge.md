@@ -2,53 +2,56 @@
 
 ### Problem
 
-Consider a long-running service in Node.js.
-This service receives asynchronous jobs from external sources (HTTP, queue, agent loop, webhook).
+Imagine a long-running Node.js service.
+This service receives async work from external sources (HTTP, queue, agent loop, webhook).
 
-> You want to limit the number of async jobs running simultaneously **but**:
+> You want to limit concurrent async operations **but**:
 >
-> * Jobs should be FIFO
-> * Pending jobs should be cancelable
-> * There should be a timeout
-> * `await` ergonomics should not be broken
-> * The event loop should not be blocked
-> * There should be no promise leaks
+> * Jobs must be FIFO
+> * Pending jobs must be cancellable
+> * Timeout support required
+> * `await` ergonomics must be preserved
+> * Event loop must not be blocked
+> * No Promise leaks
 
 ### Constraints
 
-* **No** `p-limit`, `bull`, `bottleneck`, etc.
-* **No** `setInterval` / polling
-* **No** global mutable state
-* **No** Worker Thread
+* No `p-limit`, `bull`, `bottleneck`, etc.
+* No `setInterval` / polling
+* No global mutable state
+* No Worker Threads
 * Node ≥18, TypeScript
 
 ---
 
-### Expected output
+### Expected Output
 
-Define an **abstraction**. Name it yourself. But **clearly answer** these questions in writing:
+Define an **abstraction**.
+Name it yourself.
 
-1. Where do I count **concurrency**?
-2. Where does the pending Promise **reside**?
-3. When there is a timeout, which invariants does the system preserve?
-4. How is the queue state guaranteed if a task is rejected?
-5. In which scenario does this structure **deliberately crash**?
+But provide **explicit answers** to these questions:
+
+1. **Where** am I tracking concurrency?
+2. **Where** are pending Promises stored?
+3. What invariants are preserved when timeout occurs?
+4. How is queue state guaranteed if a task rejects?
+5. In which scenario does this structure **intentionally crash**?
 
 ---
 
-### Acceptance criteria
+### Acceptance Criteria
 
 * Code must not exceed 150 lines
 * You don't have to write tests, but it **must be testable**
-* You cannot say “This is not production-ready”
-  (either defend it, or clearly state its limitations)
+* You don't get to say "This is not production-ready"
+  (either defend it, or explicitly define its boundaries)
 
 ---
 
-### Why is this really a challenge?
+### Why This is Actually a Challenge
 
 Because:
 
-* 90% of developers think this is “easy”
+* 90% of developers think this is "easy"
 * 90% of solutions have memory leaks or race conditions
 * The correct solution is **small but sharp**
