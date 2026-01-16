@@ -1,0 +1,24 @@
+{
+  "name": "@erdem/daily-challenges",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Daily coding challenges - one problem, one solution, one blog post",
+  "workspaces": [
+    "day-*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "keywords": [
+    "challenge",
+    "typescript",
+    "learning"
+  ],
+  "author": "erdem",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
