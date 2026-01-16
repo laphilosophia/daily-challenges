@@ -1,6 +1,6 @@
 {
-  "name": "@erdem/daily-challenges",
-  "version": "0.0.0",
+  "name": "@laphilosophia/daily-challenges",
+  "version": "0.1.0",
   "private": true,
   "description": "Daily coding challenges - one problem, one solution, one blog post",
   "workspaces": [
@@ -16,7 +16,7 @@
     "typescript",
     "learning"
   ],
-  "author": "erdem",
+  "author": "Erdem Arslan",
   "license": "MIT",
   "engines": {
     "node": ">=18"
