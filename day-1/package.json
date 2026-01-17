@@ -1,5 +1,5 @@
 {
-  "name": "@erdem/day-1-async-gate",
+  "name": "day-1-challenge",
   "version": "1.0.0",
   "description": "Day 1: Production-grade async concurrency limiter with FIFO, cancellation, timeout",
   "type": "module",

@@ -1,0 +1,15 @@
+{
+  "name": "day-2-challenge",
+  "version": "1.0.0",
+  "description": "Day 2: Backpressure-aware async iterator built on AsyncGate",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
