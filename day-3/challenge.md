@@ -4,99 +4,87 @@
 
 ### Problem
 
-In Node.js, **async context propagation** is commonly treated as a solved problem:
+In Node.js, `AsyncLocalStorage` is often treated as a solved problem.
 
-* `AsyncLocalStorage`
-* request IDs
-* trace IDs
-* scoped logging
+In isolation, it is.
 
-In practice, it **breaks under load**.
+Under load — combined with **concurrency primitives** such as:
 
-Not because `AsyncLocalStorage` is broken —
-but because **concurrency primitives don’t compose with it cleanly**.
+* gates
+* async iterators
+* retries
+* timeouts
+* delayed execution
+
+**async context silently breaks**.
+
+No crashes.
+No errors.
+Just *wrong context in production*.
 
 ---
 
-### Real-world failure mode
+### Core Failure Mode
 
-You have:
+```ts
+// Request A — traceId: "abc"
+ctx.run({ traceId: "abc" }, async () => {
+  await gate.run(async () => {
+    // Gate was full → task queued
+    // Meanwhile, Request B arrived — traceId: "xyz"
+    console.log(ctx.get("traceId"));
+  });
+});
+```
 
-* a concurrency gate
-* async iterators
-* background tasks
-* retries
-* timeouts
+At execution time, which context is visible?
 
-You expect this invariant to hold:
+* `"abc"` — the context active when the task was scheduled?
+* `"xyz"` — the context active when the task finally ran?
 
-> “Every async task sees the context that was active when it was scheduled.”
+`AsyncLocalStorage` exposes **execution-time context**,
+but the system invariant we want is **schedule-time context**.
 
-Under load, this invariant **silently breaks**.
+That mismatch is the bug.
 
 ---
 
 ### Objective
 
-Design a mechanism that ensures:
+Design a mechanism that guarantees:
 
-> **Async context is captured at scheduling time and restored at execution time**,
-> even when tasks are:
->
-> * delayed
-> * queued
-> * gated
-> * cancelled
-> * resumed later
+> **Async context is captured when a task is scheduled
+> and restored when that task is executed**,
+> regardless of delays, queuing, or concurrency.
 
-This must work with:
+This must compose correctly with:
 
-* your Day-01 `AsyncGate`
-* your Day-02 backpressure-aware iterator
+* Day-01 `AsyncGate`
+* Day-02 backpressure-aware async iterator
 
 ---
 
-### Target API (conceptual)
+### Target Invariant
 
-```ts
-ctx.run({ traceId: "abc" }, async () => {
-  await gate.run(async () => {
-    await doWork(); // must see traceId = "abc"
-  });
-});
-```
-
-or:
-
-```ts
-for await (const item of gate.wrap(source())) {
-  await ctx.run(currentCtx, async () => {
-    await process(item);
-  });
-}
-```
-
-But **how** this is implemented is entirely up to you.
+> Every async task observes the context that was active
+> **at the moment it was scheduled**,
+> not the context active when it happened to run.
 
 ---
 
-### Hard Constraints
+### Constraints
 
-* `AsyncLocalStorage` is allowed
-* No global mutable context
-* No monkey-patching Promise
-* No framework-level magic
+* `AsyncLocalStorage` ✅
+* Global mutable context ❌
+* Promise monkey-patching ❌
+* Framework-level magic ❌
 * Node.js ≥ 18
 * TypeScript
-
-You may assume:
-
-* single process
-* single thread (no Worker threads)
+* Single process, single thread
 
 ---
 
-### Design Questions (must be answered in the post)
+### Required Design Questions (must be answered)
 
 1. **When is context captured?**
 
@@ -107,8 +95,8 @@ You may assume:
 2. **Where is context restored?**
 
    * before `await`?
-   * inside gate?
-   * inside iterator?
+   * inside the gate?
+   * inside the iterator?
 
 3. What happens if:
 
@@ -126,32 +114,46 @@ You may assume:
 
 ---
 
+### Iterator-Specific Ambiguity (intentional)
+
+```ts
+for await (const item of gate.wrap(source())) {
+  await process(item);
+}
+```
+
+Which context should `process(item)` observe?
+
+* the context active when `wrap()` was called?
+* the context active when `next()` was called?
+* the context active when the item was produced?
+
+This is a **design decision**, not an implementation detail.
+It must be chosen, justified, and documented.
+
+---
+
 ### Acceptance Criteria
 
 * Context propagation is deterministic
 * No context bleed between concurrent tasks
-* Cancellation does not leak context
+* Cancellation and timeouts do not leak context
 * FIFO ordering is preserved
-* Clear failure boundaries are documented
+* Failure boundaries are explicit and documented
 
 ---
 
 ### Why This Is Day-03
 
-Because:
+* Capacity (Day-01) breaks systems loudly
+* Rate (Day-02) breaks systems slowly
+* **Context breaks systems silently**
 
-* Context is the **hidden state** of async systems
-* Most bugs here are invisible until production
-* Gates and iterators **amplify** context bugs
-* Frameworks hide this; primitives expose it
-
-If Day-01 was *capacity*
-and Day-02 was *rate*
-then Day-03 is **meaning**.
+This challenge is about making hidden state **honest**.
 
 ---
 
-### Series Index (so far)
+### Series Index
 
 * Day-01 — Bounded async execution
 * Day-02 — Iterator-level backpressure
