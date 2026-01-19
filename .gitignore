@@ -36,3 +36,6 @@ temp/
 
 # NPM token (never commit)
 .npmrc
+
+# Internals
+tcr-lite.md
