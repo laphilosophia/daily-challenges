@@ -22,27 +22,38 @@ often solved ad-hoc, inconsistently, or not at all.
 
 ```
 challenge/
-├── day-1/   # AsyncGate - Async concurrency limiter
-├── day-2/   # Backpressure-Aware Async Iterators
-├── day-3/   # ...
-└── ...
+├── 01-challenge/   # AsyncGate - Async concurrency limiter
+├── 02-challenge/   # Backpressure-Aware Async Iterators
+├── 03-challenge/   # Context Propagation Under Load
+├── 04-challenge/   # Retry Semantics Under Preserved Causality
+├── 05-challenge/   # Circuit Breaking as Semantic Boundary
+└── 06-conclusion/  # Graceful Degradation vs Silent Failure
 ```
-
-## Philosophy
-
-Frameworks are built on primitives. This repository focuses on the primitives.
-
-- **Real problems** — Production issues, not theoretical exercises
-- **Constrained solutions** — No external libraries, build from first principles
-- **Line limits** — Sharp, minimal, testable code
-- **Critical questions** — Every challenge interrogates design decisions
 
 ## Challenges
 
 | Day | Challenge | Keywords |
 |-----|-----------|----------|
-| 1 | [Bounded Async Execution (AsyncGate)](./day-1/) | concurrency, semaphore, FIFO, cancellation |
-| 2 | [Backpressure-Aware Async Iterators](./day-2/) | backpressure, async iterators, streams |
-| 3 | [Context Propagation Under Load](./day-3/) | AsyncLocalStorage, context capture, schedule-time |
-| 4 | [Retry Semantics Under Preserved Causality](./day-4/) | retry, causality, exponential backoff, derived context |
-| 5 | [Circuit Breaker](./day-5/) | circuit breaker, causality, retry, exponential backoff |
+| 1 | [Bounded Async Execution (AsyncGate)](./01-challenge/) | concurrency, semaphore, FIFO, cancellation |
+| 2 | [Backpressure-Aware Async Iterators](./02-challenge/) | backpressure, async iterators, streams |
+| 3 | [Context Propagation Under Load](./03-challenge/) | AsyncLocalStorage, context capture, schedule-time |
+| 4 | [Retry Semantics Under Preserved Causality](./04-challenge/) | retry, causality, exponential backoff, derived context |
+| 5 | [Circuit Breaking as Semantic Boundary](./05-challenge/) | circuit breaker, causality severance, fail-before-gate |
+| 6 | [Graceful Degradation vs Silent Failure](./06-conclusion/) | silence, epistemic integrity, decision observability |
+
+## Philosophy
+
+```
+Day-01 (Capacity):   How much work can we handle?
+Day-02 (Rate):       How fast should we pull work?
+Day-03 (Meaning):    What does this work signify?
+Day-04 (Continuity): How does work survive failure?
+Day-05 (Ethics):     When do we stop?
+Day-06 (Silence):    What do we say when we stop?
+```
+
+> Frameworks are built on primitives. This repository focuses on the primitives.
+
+## Product
+
+This challenge series led to **[TCR-Lite: Async Stack Observer](./tcr-lite.md)** — a decision-level observability tool that records *why* async decisions were made, not just *what* happened.
