@@ -45,4 +45,4 @@ Frameworks are built on primitives. This repository focuses on the primitives.
 | 2 | [Backpressure-Aware Async Iterators](./day-2/) | backpressure, async iterators, streams |
 | 3 | [Context Propagation Under Load](./day-3/) | AsyncLocalStorage, context capture, schedule-time |
 | 4 | [Retry Semantics Under Preserved Causality](./day-4/) | retry, causality, exponential backoff, derived context |
-
+| 5 | [Circuit Breaker](./day-5/) | circuit breaker, causality, retry, exponential backoff |
